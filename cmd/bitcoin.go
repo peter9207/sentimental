@@ -27,7 +27,7 @@ func init() {
 	bitcoinCmd.Flags().String("mongo", "mongodb://root:password@localhost:27017/sentimental?authSource=admin", "MongoDB connection URI")
 }
 
-var bitcoinSubreddits = []string{"bitcoin", "CryptoCurrency"}
+var bitcoinSubreddits = []string{"bitcoin", "CryptoCurrency", "btc"}
 
 func runBitcoin(cmd *cobra.Command, args []string) error {
 	limit, _ := cmd.Flags().GetInt("limit")
@@ -39,7 +39,7 @@ func runBitcoin(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("[%s] Starting bitcoin monitor\n", time.Now().Format(time.TimeOnly))
-	fmt.Printf("  Subreddits : %s\n", "bitcoin, CryptoCurrency")
+	fmt.Printf("  Subreddits : %s\n", "bitcoin, CryptoCurrency, btc")
 	fmt.Printf("  Posts/sub  : %d\n", limit)
 	fmt.Printf("  Interval   : %s\n\n", interval)
 
