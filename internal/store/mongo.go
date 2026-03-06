@@ -59,6 +59,15 @@ func (s *MongoStore) Save(ctx context.Context, results map[string]*analysis.Resu
 	return err
 }
 
+func (s *MongoStore) NewestPostExists(ctx context.Context, newestPostAt time.Time) (bool, error) {
+	filter := bson.M{"newest_post_at": newestPostAt}
+	count, err := s.col.CountDocuments(ctx, filter)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func (s *MongoStore) SaveBitcoin(ctx context.Context, result *analysis.Result, newestPostAt time.Time) error {
 	now := time.Now().UTC()
 	doc := SentimentRecord{

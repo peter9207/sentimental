@@ -128,6 +128,17 @@ func scrapeBitcoin(ctx context.Context, reddit *source.Reddit, analyzer *analysi
 		TotalScore: total,
 	}
 
+	if !newestPostAt.IsZero() {
+		exists, err := db.NewestPostExists(ctx, newestPostAt)
+		if err != nil {
+			return fmt.Errorf("checking newest post: %w", err)
+		}
+		if exists {
+			fmt.Println("  No new posts since last scrape, skipping save.")
+			return nil
+		}
+	}
+
 	if err := db.SaveBitcoin(ctx, result, newestPostAt); err != nil {
 		return fmt.Errorf("saving to mongodb: %w", err)
 	}
