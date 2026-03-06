@@ -25,7 +25,7 @@ var monitorCmd = &cobra.Command{
 }
 
 func init() {
-	monitorCmd.Flags().StringSliceP("subreddits", "s", []string{"wallstreetbets", "stocks", "investing"}, "subreddits to monitor")
+	monitorCmd.Flags().StringSliceP("subreddits", "s", []string{"wallstreetbets", "stocks", "investing", "bitcoin"}, "subreddits to monitor")
 	monitorCmd.Flags().IntP("limit", "l", 25, "posts to fetch per subreddit")
 	monitorCmd.Flags().Duration("interval", time.Minute, "how often to scrape")
 	monitorCmd.Flags().String("mongo", "mongodb://root:password@localhost:27017/sentimental?authSource=admin", "MongoDB connection URI")
@@ -41,26 +41,34 @@ func runMonitor(cmd *cobra.Command, args []string) error {
 		mongoURI = uri
 	}
 
+	fmt.Printf("[%s] Starting monitor\n", time.Now().Format(time.TimeOnly))
+	fmt.Printf("  Subreddits : %s\n", strings.Join(subreddits, ", "))
+	fmt.Printf("  Posts/sub  : %d\n", limit)
+	fmt.Printf("  Interval   : %s\n\n", interval)
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
+	fmt.Printf("[%s] Initializing sentiment analyzer...\n", time.Now().Format(time.TimeOnly))
 	analyzer, err := analysis.New()
 	if err != nil {
 		return err
 	}
 
+	fmt.Printf("[%s] Launching Reddit source...\n", time.Now().Format(time.TimeOnly))
 	reddit, err := source.NewReddit()
 	if err != nil {
 		return fmt.Errorf("initializing browser: %w", err)
 	}
 	defer reddit.Close()
 
+	fmt.Printf("[%s] Connecting to MongoDB...\n", time.Now().Format(time.TimeOnly))
 	db, err := store.NewMongo(ctx, mongoURI)
 	if err != nil {
 		return fmt.Errorf("connecting to mongodb: %w", err)
 	}
 
-	fmt.Printf("Monitoring %s every %s. Press Ctrl+C to stop.\n\n", strings.Join(subreddits, ", "), interval)
+	fmt.Printf("[%s] Ready. Monitoring %s every %s. Press Ctrl+C to stop.\n\n", time.Now().Format(time.TimeOnly), strings.Join(subreddits, ", "), interval)
 
 	// Run immediately, then on each tick
 	if err := scrape(ctx, reddit, analyzer, db, subreddits, limit); err != nil {
@@ -98,6 +106,7 @@ func scrape(ctx context.Context, reddit *source.Reddit, analyzer *analysis.Analy
 			fmt.Printf("  warning r/%s: %v\n", sub, err)
 			continue
 		}
+		fmt.Printf("  r/%s: fetched %d posts\n", sub, len(posts))
 
 		for _, post := range posts {
 			text := post.Title + " " + post.Body
