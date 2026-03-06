@@ -19,5 +19,7 @@ func Execute() {
 }
 
 func init() {
+	monitorCmd.AddCommand(stocksCmd)
+	monitorCmd.AddCommand(bitcoinCmd)
 	rootCmd.AddCommand(monitorCmd)
 }

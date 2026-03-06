@@ -20,15 +20,20 @@ import (
 
 var monitorCmd = &cobra.Command{
 	Use:   "monitor",
+	Short: "Monitor sentiment across data sources",
+}
+
+var stocksCmd = &cobra.Command{
+	Use:   "stocks",
 	Short: "Monitor sentiment for stock tickers across data sources",
 	RunE:  runMonitor,
 }
 
 func init() {
-	monitorCmd.Flags().StringSliceP("subreddits", "s", []string{"wallstreetbets", "stocks", "investing", "bitcoin"}, "subreddits to monitor")
-	monitorCmd.Flags().IntP("limit", "l", 25, "posts to fetch per subreddit")
-	monitorCmd.Flags().Duration("interval", time.Minute, "how often to scrape")
-	monitorCmd.Flags().String("mongo", "mongodb://root:password@localhost:27017/sentimental?authSource=admin", "MongoDB connection URI")
+	stocksCmd.Flags().StringSliceP("subreddits", "s", []string{"wallstreetbets", "stocks", "investing", "bitcoin"}, "subreddits to monitor")
+	stocksCmd.Flags().IntP("limit", "l", 25, "posts to fetch per subreddit")
+	stocksCmd.Flags().Duration("interval", time.Minute, "how often to scrape")
+	stocksCmd.Flags().String("mongo", "mongodb://root:password@localhost:27017/sentimental?authSource=admin", "MongoDB connection URI")
 }
 
 func runMonitor(cmd *cobra.Command, args []string) error {
@@ -63,7 +68,7 @@ func runMonitor(cmd *cobra.Command, args []string) error {
 	defer reddit.Close()
 
 	fmt.Printf("[%s] Connecting to MongoDB...\n", time.Now().Format(time.TimeOnly))
-	db, err := store.NewMongo(ctx, mongoURI)
+	db, err := store.NewMongo(ctx, mongoURI, "sentiment")
 	if err != nil {
 		return fmt.Errorf("connecting to mongodb: %w", err)
 	}

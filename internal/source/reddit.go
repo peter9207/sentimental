@@ -3,7 +3,9 @@ package source
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
@@ -31,7 +33,7 @@ func (r *Reddit) Close() error {
 }
 
 func (r *Reddit) Fetch(ctx context.Context, subreddit string, limit int) ([]Post, error) {
-	url := fmt.Sprintf("https://old.reddit.com/r/%s/hot/", subreddit)
+	url := fmt.Sprintf("https://old.reddit.com/r/%s/new/", subreddit)
 
 	page, err := r.browser.Page(proto.TargetCreateTarget{URL: url})
 	if err != nil {
@@ -83,6 +85,11 @@ func (r *Reddit) Fetch(ctx context.Context, subreddit string, limit int) ([]Post
 		}
 		if postURL != nil {
 			post.URL = *postURL
+		}
+		if ts, _ := thing.Attribute("data-timestamp"); ts != nil {
+			if sec, err := strconv.ParseFloat(*ts, 64); err == nil {
+				post.CreatedAt = time.Unix(int64(sec), 0)
+			}
 		}
 
 		posts = append(posts, post)

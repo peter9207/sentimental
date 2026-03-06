@@ -13,19 +13,20 @@ import (
 
 // SentimentRecord is a single point-in-time snapshot of a ticker's sentiment.
 type SentimentRecord struct {
-	ID        bson.ObjectID `bson:"_id,omitempty"`
-	Ticker    string        `bson:"ticker"`
-	Mentions  int           `bson:"mentions"`
-	Score     float64       `bson:"score"`
-	Label     string        `bson:"label"`
-	ScrapedAt time.Time     `bson:"scraped_at"`
+	ID           bson.ObjectID `bson:"_id,omitempty"`
+	Ticker       string        `bson:"ticker"`
+	Mentions     int           `bson:"mentions"`
+	Score        float64       `bson:"score"`
+	Label        string        `bson:"label"`
+	ScrapedAt    time.Time     `bson:"scraped_at"`
+	NewestPostAt *time.Time    `bson:"newest_post_at,omitempty"`
 }
 
 type MongoStore struct {
 	col *mongo.Collection
 }
 
-func NewMongo(ctx context.Context, uri string) (*MongoStore, error) {
+func NewMongo(ctx context.Context, uri, collection string) (*MongoStore, error) {
 	client, err := mongo.Connect(options.Client().ApplyURI(uri))
 	if err != nil {
 		return nil, err
@@ -33,7 +34,7 @@ func NewMongo(ctx context.Context, uri string) (*MongoStore, error) {
 	if err := client.Ping(ctx, nil); err != nil {
 		return nil, err
 	}
-	col := client.Database("sentimental").Collection("sentiment")
+	col := client.Database("sentimental").Collection(collection)
 	return &MongoStore{col: col}, nil
 }
 
@@ -55,5 +56,19 @@ func (s *MongoStore) Save(ctx context.Context, results map[string]*analysis.Resu
 	}
 
 	_, err := s.col.InsertMany(ctx, docs)
+	return err
+}
+
+func (s *MongoStore) SaveBitcoin(ctx context.Context, result *analysis.Result, newestPostAt time.Time) error {
+	now := time.Now().UTC()
+	doc := SentimentRecord{
+		Ticker:       result.Ticker,
+		Mentions:     result.Mentions,
+		Score:        result.AverageScore(),
+		Label:        result.Label(),
+		ScrapedAt:    now,
+		NewestPostAt: &newestPostAt,
+	}
+	_, err := s.col.InsertOne(ctx, doc)
 	return err
 }

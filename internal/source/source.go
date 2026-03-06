@@ -1,14 +1,18 @@
 package source
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // Post represents a piece of content from any data source.
 type Post struct {
-	ID     string
-	Title  string
-	Body   string
-	Source string
-	URL    string
+	ID        string
+	Title     string
+	Body      string
+	Source    string
+	URL       string
+	CreatedAt time.Time
 }
 
 // DataSource is implemented by any content provider (Reddit, StockTwits, etc.).
